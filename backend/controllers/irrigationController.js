@@ -35,6 +35,17 @@ export const startIrrigation = async (req, res) => {
   }
 };
 
+export const getLatestMoisture = async () => {
+  try {
+    // Replace this with actual DB / MQTT logic
+    const latestMoisture = 35; // Example: 35%
+    return `${latestMoisture}%`;
+  } catch (err) {
+    console.error('Error getting moisture:', err);
+    throw err;
+  }
+};
+
 export const stopIrrigation = async (req, res) => {
   try {
     const result = await irrigationLogic.stopIrrigation(

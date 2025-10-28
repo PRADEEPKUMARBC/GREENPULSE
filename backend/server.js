@@ -1,7 +1,9 @@
+import dotenv from "dotenv";
+dotenv.config();
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
-import dotenv from 'dotenv';
+// import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 
@@ -13,14 +15,17 @@ import irrigationRoutes from './routes/irrigation.js';
 import weatherRoutes from './routes/weather.js';
 import aiRoutes from './routes/ai.js';
 import contactRoutes from './routes/contact.js';
-import farmRoutes from './routes/farmRoutes.js'
+import farmRoutes from './routes/farmRoutes.js';
+import moistureRoutes from './routes/moisture.js';
+import hardwareRoutes from './routes/hardware/index.js';
+import irrigationEventsRoutes from './routes/ai/irrigation-events.js';
 
 // Utils
 import { connectMQTT } from './utils/mqttHandler.js';
 import { irrigationAI } from './utils/aiModel.js';
 import { checkAIIntegration } from './utils/aiStatus.js';
 
-dotenv.config();
+// dotenv.config();
 
 const app = express();
 const server = createServer(app);
@@ -28,10 +33,14 @@ const server = createServer(app);
 // ===== SOCKET.IO CORS =====
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:5173", // frontend port
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    methods: ["GET", "POST"],
     credentials: true,
   },
+  transports: ["websocket", "polling"], // ✅ ensures fallback works
+  allowEIO3: true // ✅ supports older clients if needed
 });
+
 
 // ===== GLOBAL MIDDLEWARE =====
 app.use(cors({
@@ -69,6 +78,9 @@ app.use('/api/weather', weatherRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/farms', farmRoutes)
+app.use('/api', moistureRoutes);
+app.use('/api/hardware', hardwareRoutes);
+app.use('/api/ai/irrigation-events', irrigationEventsRoutes);
 
 app.get("/", (req, res) => {
   res.send("✅ Backend is working fine!");
@@ -84,9 +96,9 @@ io.on('connection', (socket) => {
     console.log(`User ${socket.id} joined farm ${farmId}`);
   });
 
-  socket.on('disconnect', () => {
-    console.log('❌ User disconnected:', socket.id);
-  });
+  // socket.on('disconnect', () => {
+  //   console.log('❌ User disconnected:', socket.id);
+  // });
 });
 
 // Make io accessible to routes
